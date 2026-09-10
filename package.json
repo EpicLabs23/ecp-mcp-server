@@ -1,17 +1,45 @@
 {
   "name": "ecp-mcp-server",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.1.0",
+  "description": "MCP server for ECP (Epic Control Panel) - manage a hosting account's apps, domains, databases, files, PHP, SSL and more conversationally through an MCP client like Claude Code or Claude Desktop.",
   "main": "dist/index.js",
+  "bin": {
+    "ecp-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    ".env.sample"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
-    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js"
+    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ecp",
+    "epic-control-panel",
+    "hosting",
+    "claude"
+  ],
+  "author": "Epic Labs 23",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EpicLabs23/ecp-mcp-server.git"
+  },
+  "homepage": "https://github.com/EpicLabs23/ecp-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/EpicLabs23/ecp-mcp-server/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "type": "module",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
