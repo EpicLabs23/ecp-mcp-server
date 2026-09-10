@@ -16,6 +16,7 @@ import { oneclickTools } from "./tools/oneclick.js";
 import { gitIntegrationTools } from "./tools/git-integrations.js";
 import { resourceMonitorTools } from "./tools/resource-monitor.js";
 import { storageBdTools } from "./tools/storage-bd.js";
+import { backupTools } from "./tools/backup.js";
 import type { ToolDef } from "./tools/types.js";
 
 // Dev-only escape hatch for a self-signed target (see .env.sample). Process-
@@ -58,7 +59,9 @@ const server = new McpServer(
 
 No arbitrary shell command execution is available through any tool here - by design, not oversight. ecp-go's own command-execution routes (custom-command/execute, oneclick's run-cmd, the interactive terminal) are either fire-and-forget with no way to see output, or don't fit a single tool-call shape at all. Do not try to route around this by improvising a command through another tool (e.g. stuffing a shell command into a deploy step's install/build fields expecting to see its output back - those have the identical blind-execution problem).
 
-When a task genuinely needs a shell command this server has no tool for (installing a new dependency mid-conversation, running a one-off script or migration, debugging something interactively), tell the user to run it themselves in ECP's own terminal in the browser: ${ecpUiUrl} - don't guess at a workaround.`,
+For the same reason, triggering a local file backup or restore isn't available either (ecp_backup_list_snapshots is - listing is fine) - starting one requires the same fire-and-forget, no-visible-outcome mechanism.
+
+When a task genuinely needs a shell command or a backup/restore trigger this server has no tool for, tell the user to do it themselves in ECP's own UI in the browser: ${ecpUiUrl} - don't guess at a workaround.`,
   },
 );
 
@@ -77,6 +80,7 @@ const allTools: ToolDef[] = [
   ...gitIntegrationTools,
   ...resourceMonitorTools,
   ...storageBdTools,
+  ...backupTools,
 ];
 
 for (const tool of allTools) {
