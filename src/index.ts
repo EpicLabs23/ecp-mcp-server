@@ -13,7 +13,7 @@ import { mongodbTools } from "./tools/mongodb.js";
 import { mssqlTools, postgresTools } from "./tools/relational-engines.js";
 import { systemTools } from "./tools/system.js";
 import { asdfTools } from "./tools/asdf.js";
-import { oneclickTools } from "./tools/oneclick.js";
+import { wordpressHostingTools } from "./tools/wordpress-hosting.js";
 import { gitIntegrationTools } from "./tools/git-integrations.js";
 import { resourceMonitorTools } from "./tools/resource-monitor.js";
 import { storageBdTools } from "./tools/storage-bd.js";
@@ -58,7 +58,7 @@ const server = new McpServer(
   {
     instructions: `This server manages one ECP hosting account's apps, domains, databases, files, PHP, SSL, and related settings.
 
-No arbitrary shell command execution is available through any tool here - by design, not oversight. ecp-go's own command-execution routes (custom-command/execute, oneclick's run-cmd, the interactive terminal) are either fire-and-forget with no way to see output, or don't fit a single tool-call shape at all. Do not try to route around this by improvising a command through another tool (e.g. stuffing a shell command into a deploy step's install/build fields expecting to see its output back - those have the identical blind-execution problem).
+No arbitrary shell command execution is available through any tool here - by design, not oversight. ecp-go's own command-execution routes (custom-command/execute, the interactive terminal) are either fire-and-forget with no way to see output, or don't fit a single tool-call shape at all. Do not try to route around this by improvising a command through another tool (e.g. stuffing a shell command into a deploy step's install/build fields expecting to see its output back - those have the identical blind-execution problem).
 
 For the same reason, triggering a local file backup or restore isn't available either (ecp_backup_list_snapshots is - listing is fine) - starting one requires the same fire-and-forget, no-visible-outcome mechanism.
 
@@ -77,7 +77,7 @@ const allTools: ToolDef[] = [
   ...postgresTools,
   ...systemTools,
   ...asdfTools,
-  ...oneclickTools,
+  ...wordpressHostingTools,
   ...gitIntegrationTools,
   ...resourceMonitorTools,
   ...storageBdTools,
