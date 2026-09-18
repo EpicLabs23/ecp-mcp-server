@@ -1,14 +1,14 @@
 import { z } from "zod";
 import type { ToolDef } from "./types.js";
 
-// Maps to router/php.go, router/ssl.go, router/system.go, router/supervisor.go,
+// Maps to router/ssl.go, router/system.go, router/supervisor.go,
 // router/crontab.go.
 //
-// php install/uninstall use the same fire-and-forget ExecRto primitive as
-// the blocked custom-command/execute (confirmed by reading
-// handler/php/*.go) - they start a real apt-get install/remove but the
-// "output" field in the response is always empty. Flagged in the tool
-// descriptions; verify success via ecp_php_installed_versions afterward.
+// PHP-FPM management (install/uninstall/ini) was removed along with
+// router/php.go and handler/php/*.go - every ecp-docker image is
+// OpenLiteSpeed + lsphp now (see ehm-api/docs/MANAGED_WORDPRESS.md), and
+// lsphp versions are baked into the image at build time, not installed
+// per-account.
 //
 // crontab/supervisor commands route through ecp-cli's buildArgs, which
 // base64-encodes the JSON body into a single --body= flag before shelling
@@ -20,44 +20,6 @@ import type { ToolDef } from "./types.js";
 // different from a one-shot action, so it gets `confirm: true` too.
 
 export const systemTools: ToolDef[] = [
-  // PHP
-  {
-    name: "ecp_php_installed_versions",
-    description: "List PHP versions installed on this account's container.",
-    inputSchema: {},
-    handler: async (_args, client) => client.request("GET", "php/installed-versions"),
-  },
-  {
-    name: "ecp_php_installed_packages",
-    description: "List installed PHP extensions for a version.",
-    inputSchema: { version: z.string() },
-    handler: async (args, client) => client.request("GET", `php/installed-packages/${args.version}`),
-  },
-  {
-    name: "ecp_php_get_ini",
-    description: "Get php.ini values for a PHP version.",
-    inputSchema: { version: z.string() },
-    handler: async (args, client) => client.request("GET", "php/ini", { query: { version: args.version } }),
-  },
-  {
-    name: "ecp_php_set_ini",
-    description: "Overwrite php.ini for a PHP version. Can break every app using that version if malformed.",
-    inputSchema: { version: z.string(), file_content: z.string(), confirm: z.literal(true) },
-    handler: async (args, client) => client.request("POST", "php/ini", { body: args }),
-  },
-  {
-    name: "ecp_php_install",
-    description: "Install a PHP version (apt-get, takes time). This tool cannot show install output - check ecp_php_installed_versions afterward to confirm it succeeded.",
-    inputSchema: { version: z.string(), confirm: z.literal(true) },
-    handler: async (args, client) => client.request("POST", "php/install", { body: { version: args.version } }),
-  },
-  {
-    name: "ecp_php_uninstall",
-    description: "Uninstall a PHP version. Breaks any app still configured to use it. This tool cannot show uninstall output - check ecp_php_installed_versions afterward.",
-    inputSchema: { version: z.string(), confirm: z.literal(true) },
-    handler: async (args, client) => client.request("POST", "php/uninstall", { body: { version: args.version } }),
-  },
-
   // SSL
   {
     name: "ecp_ssl_available_certificates",
