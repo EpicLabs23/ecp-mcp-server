@@ -98,6 +98,9 @@ export const appsTools: ToolDef[] = [
       app_root_directory: z.string(),
       deploy_type: z.string().optional(),
       stack_version: z.string().optional(),
+      php_version: z.string().optional().describe(
+        "For a PHP app's install/build step: the PHP CLI version to run composer/artisan under (matches the app's own php_version - the one its OpenLiteSpeed vhost serves it with). Omit for non-PHP apps.",
+      ),
       install_command: z.string().optional(),
       build_command: z.string().optional(),
       start_command: z.string().optional(),
