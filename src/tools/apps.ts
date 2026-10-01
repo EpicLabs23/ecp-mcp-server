@@ -16,6 +16,13 @@ import type { ToolDef } from "./types.js";
 //   synchronously but also returns no output. Only "start"/"stop"/"restart"/
 //   "remove" give a real synchronous result (they go through supervisor).
 
+// ecp-go's deploy "start" registers the supervisor program as
+// "<app_name>-<app_id>" (handler/apps/deploy.go), so a bare app_name never
+// matches it. Given app_id, build that name instead of making callers know.
+function processName(args: Record<string, unknown>): string {
+  return args.app_id !== undefined ? `${args.app_name}-${args.app_id}` : String(args.app_name);
+}
+
 export const appsTools: ToolDef[] = [
   {
     name: "ecp_apps_list",
@@ -47,7 +54,7 @@ export const appsTools: ToolDef[] = [
   },
   {
     name: "ecp_apps_create_from_upload",
-    description: "Register an app whose files were already uploaded to app_dir.",
+    description: "Register an app whose files were already uploaded to ~/apps/<app_dir>. app_dir is that folder's name (e.g. 'my-app'); the full '/home/<user>/apps/my-app' form is also accepted.",
     inputSchema: {
       app_name: z.string(),
       app_dir: z.string(),
@@ -137,18 +144,20 @@ export const appsTools: ToolDef[] = [
   },
   {
     name: "ecp_apps_tail_logs",
-    description: "Tail an app's supervisor-managed process log (only meaningful after a 'start' deploy step).",
-    inputSchema: { app_name: z.string(), byte_count: z.number().optional() },
+    description:
+      "Tail an app's supervisor-managed process log (only meaningful after a 'start' deploy step). " +
+      "The process is registered as '<app_name>-<app_id>' - pass app_id and it's built for you; app_name alone must already be that full process name.",
+    inputSchema: { app_name: z.string(), app_id: z.number().optional(), byte_count: z.number().optional() },
     handler: async (args, client) =>
       client.request("GET", "apps/logs", {
-        query: { app_name: args.app_name, byte_count: args.byte_count },
+        query: { app_name: processName(args), byte_count: args.byte_count },
       }),
   },
   {
     name: "ecp_apps_flush_logs",
-    description: "Clear an app's supervisor-managed process log.",
-    inputSchema: { app_name: z.string() },
-    handler: async (args, client) => client.request("GET", "apps/flush-logs", { query: { app_name: args.app_name } }),
+    description: "Clear an app's supervisor-managed process log. Same naming as ecp_apps_tail_logs: pass app_id, or app_name as the full '<app_name>-<app_id>'.",
+    inputSchema: { app_name: z.string(), app_id: z.number().optional() },
+    handler: async (args, client) => client.request("GET", "apps/flush-logs", { query: { app_name: processName(args) } }),
   },
   {
     name: "ecp_apps_save_custom_command",

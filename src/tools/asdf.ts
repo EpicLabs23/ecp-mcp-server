@@ -35,7 +35,9 @@ export const asdfTools: ToolDef[] = [
   },
   {
     name: "ecp_asdf_install",
-    description: "Install a plugin version (takes time). This tool cannot show install output - check ecp_asdf_list_installed_versions afterward to confirm it succeeded.",
+    description:
+      "Start installing a plugin version. Returns once the install STARTS - building can take minutes (python compiles from source). " +
+      "This tool cannot show install output: poll ecp_asdf_list_installed_versions, which only lists a version once its install has actually produced files.",
     inputSchema: { name: z.string(), version: z.string(), confirm: z.literal(true) },
     handler: async (args, client) => client.request("POST", "asdf/install", { body: { name: args.name, version: args.version } }),
   },

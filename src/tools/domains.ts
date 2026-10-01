@@ -107,13 +107,19 @@ export const domainTools: ToolDef[] = [
   },
   {
     name: "ecp_network_update_port_maps",
-    description: "Update a port mapping and its nginx config. Can affect site routing.",
+    description:
+      "Update a port mapping and its nginx config. Can affect site routing. " +
+      "Pass app_id to also attach this port map to a process-based app (sets the app's port_map_id, as ecp-ui's Domain & Port step does) - " +
+      "if another app already holds this domain/port the call fails with 409 unless force is true, which detaches it from that app. " +
+      "Not for php/static/wordpress apps - those use ecp_apps_update_domain.",
     inputSchema: {
       domain: z.string(),
       host_port: z.number(),
       guest_port: z.number(),
       https: z.boolean().optional(),
       description: z.string().optional(),
+      app_id: z.number().optional(),
+      force: z.boolean().optional(),
     },
     handler: async (args, client) => client.request("POST", "network/update-port-maps", { body: args }),
   },
