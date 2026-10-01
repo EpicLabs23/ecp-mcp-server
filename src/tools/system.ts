@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { ToolDef } from "./types.js";
 
-// Maps to router/ssl.go, router/system.go, router/supervisor.go,
-// router/crontab.go.
+// Maps to router/ssl.go, router/system.go, router/lsphp.go,
+// router/supervisor.go, router/crontab.go, router/cleanup.go.
 //
 // PHP-FPM management (install/uninstall/ini) was removed along with
 // router/php.go and handler/php/*.go - every ecp-docker image is
@@ -23,15 +23,16 @@ export const systemTools: ToolDef[] = [
   // SSL
   {
     name: "ecp_ssl_available_certificates",
-    description: "List certificates available for a domain (pass certificate_name: 'lets_encrypt' or 'self_signed').",
-    inputSchema: { domain: z.string().optional(), certificate_name: z.enum(["lets_encrypt", "self_signed"]).optional() },
+    description: "Get the certificate of one kind stored for a domain (certificate_name: 'lets_encrypt', 'self_signed' or 'upload'), with its subject/issuer/expiry/covered-domains metadata. Returns false if none exists.",
+    inputSchema: { domain: z.string(), certificate_name: z.enum(["lets_encrypt", "self_signed", "upload"]) },
     handler: async (args, client) => client.request("GET", "ssl/available-certificates", { query: args }),
   },
   {
     name: "ecp_ssl_request_lets_encrypt",
-    description: "Issue a new Let's Encrypt certificate for a domain (does not apply it to nginx - see ecp_ssl_update_lets_encrypt or ecp_ssl_apply_certificate).",
-    inputSchema: { domain: z.string() },
-    handler: async (args, client) => client.request("POST", "ssl/request-lets-encrypt-certificate", { body: { domain: args.domain } }),
+    description: "Issue a new Let's Encrypt certificate for a domain and apply it (same as ecp_ssl_update_lets_encrypt - both issue then apply). Can break HTTPS for that domain if it fails partway.",
+    inputSchema: { domain: z.string(), confirm: z.literal(true) },
+    handler: async (args, client) =>
+      client.request("POST", "ssl/request-lets-encrypt-certificate", { body: { domain: args.domain, certificate_name: "lets_encrypt" } }),
   },
   {
     name: "ecp_ssl_update_lets_encrypt",
@@ -56,8 +57,26 @@ export const systemTools: ToolDef[] = [
   {
     name: "ecp_ssl_apply_certificate",
     description: "Apply an already-generated certificate to a domain's nginx config, without regenerating it. Can break HTTPS for that domain if misapplied.",
-    inputSchema: { domain: z.string(), certificate_name: z.enum(["lets_encrypt", "self_signed"]), confirm: z.literal(true) },
-    handler: async (args, client) => client.request("POST", "ssl/apply-certificate", { body: args }),
+    inputSchema: { domain: z.string(), certificate_name: z.enum(["lets_encrypt", "self_signed", "upload"]), confirm: z.literal(true) },
+    handler: async (args, client) =>
+      client.request("POST", "ssl/apply-certificate", { body: { domain: args.domain, certificate_name: args.certificate_name } }),
+  },
+  {
+    name: "ecp_ssl_upload_certificate",
+    description:
+      "Install a certificate the user already has (e.g. bought from a CA): validates it (PEM format, key matches cert, not expired, covers the domain), saves it, and applies it to the domain in one step. " +
+      "PEM text, not file paths. ca_bundle is the intermediate chain, if the CA provided one. The private key is redacted from this server's audit log.",
+    inputSchema: {
+      domain: z.string(),
+      certificate: z.string(),
+      private_key: z.string(),
+      ca_bundle: z.string().optional(),
+      confirm: z.literal(true),
+    },
+    handler: async (args, client) =>
+      client.request("POST", "ssl/upload-certificate", {
+        body: { domain: args.domain, certificate: args.certificate, private_key: args.private_key, ca_bundle: args.ca_bundle },
+      }),
   },
 
   // System
@@ -95,6 +114,20 @@ export const systemTools: ToolDef[] = [
     description: "Update ECP config key/values for this account.",
     inputSchema: { config: z.record(z.string(), z.unknown()), confirm: z.literal(true) },
     handler: async (args, client) => client.request("POST", "system/config", { body: args.config }),
+  },
+  {
+    name: "ecp_system_set_waf",
+    description: "Turn the account's web application firewall (OpenLiteSpeed ModSecurity) on or off for every site it serves. Disabling it removes request filtering for all sites on this account.",
+    inputSchema: { enabled: z.boolean(), confirm: z.literal(true) },
+    handler: async (args, client) => client.request("POST", "system/waf", { body: { enabled: args.enabled } }),
+  },
+
+  // lsphp
+  {
+    name: "ecp_lsphp_installed_versions",
+    description: "List the PHP (lsphp) versions available in this account's container - the valid values for a PHP app's php_version.",
+    inputSchema: {},
+    handler: async (_args, client) => client.request("GET", "lsphp/installed-versions"),
   },
 
   // Supervisor (process management)
@@ -167,5 +200,24 @@ export const systemTools: ToolDef[] = [
     inputSchema: { cron_expression: z.string(), command: z.string(), confirm: z.literal(true) },
     handler: async (args, client) =>
       client.request("DELETE", "crontab/remove", { body: { cronExpression: args.cron_expression, command: args.command } }),
+  },
+
+  // Log cleanup
+  {
+    name: "ecp_cleanup_log_report",
+    description:
+      "Dry run: list this account's log files that can be cleared (supervisord app logs, supervisord's own log, OpenLiteSpeed per-site access/error logs), each with an id and size. Changes nothing.",
+    inputSchema: {},
+    handler: async (_args, client) => client.request("GET", "cleanup/report"),
+  },
+  {
+    name: "ecp_cleanup_log_run",
+    description:
+      "Empty the given log files (ids from ecp_cleanup_log_report). Their contents are discarded permanently. Ids that are no longer eligible are reported in 'failed'.",
+    // ecp-cli treats an empty ids list as "clear everything eligible" - so
+    // ids is required and non-empty here, making every cleared log an
+    // explicit choice rather than a default.
+    inputSchema: { ids: z.array(z.string()).min(1), confirm: z.literal(true) },
+    handler: async (args, client) => client.request("POST", "cleanup/run", { body: { ids: args.ids } }),
   },
 ];

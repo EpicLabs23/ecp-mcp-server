@@ -65,4 +65,47 @@ export const wordpressHostingTools: ToolDef[] = [
     handler: async (args, client) =>
       client.request("POST", `wordpress-hosting/${args.app_id}/cache/purge`),
   },
+  {
+    name: "ecp_managed_wordpress_status",
+    description: "Get a Managed WordPress site's status: provisioning state, WordPress version, cache mode, whether its container is running, and whether the site answers on port 80.",
+    inputSchema: { app_id: z.number() },
+    handler: async (args, client) => client.request("GET", `wordpress-hosting/${args.app_id}/status`),
+  },
+  {
+    name: "ecp_managed_wordpress_events",
+    description: "List a Managed WordPress site's install/maintenance event history (each step's action, started/succeeded/failed/skipped status, and detail), oldest first - use it to see where an install failed.",
+    inputSchema: { app_id: z.number() },
+    handler: async (args, client) => client.request("GET", `wordpress-hosting/${args.app_id}/events`),
+  },
+  {
+    name: "ecp_managed_wordpress_set_cache_mode",
+    description: "Set a Managed WordPress site's LiteSpeed cache mode: 'off', 'page' (full-page cache), or 'object' (page + object cache).",
+    inputSchema: { app_id: z.number(), mode: z.enum(["off", "page", "object"]) },
+    handler: async (args, client) =>
+      client.request("PATCH", `wordpress-hosting/${args.app_id}/cache-mode`, { body: { mode: args.mode } }),
+  },
+  {
+    name: "ecp_managed_wordpress_reset_admin_password",
+    description:
+      "Reset a WordPress admin user's password (the wp-admin login, not the hosting account's). Omit new_password to have a random one generated - the new password is returned in the result. " +
+      "To just get into wp-admin once, ecp_managed_wordpress_sso_login is usually the better choice.",
+    inputSchema: { app_id: z.number(), admin_user: z.string(), new_password: z.string().optional(), confirm: z.literal(true) },
+    handler: async (args, client) =>
+      client.request("POST", `wordpress-hosting/${args.app_id}/reset-admin-password`, {
+        body: { admin_user: args.admin_user, new_password: args.new_password },
+      }),
+  },
+  {
+    name: "ecp_managed_wordpress_security",
+    description: "Get a Managed WordPress site's security status: whether XML-RPC is enabled, the wp-login rate limit in effect, the latest core-file integrity check, and file-permission findings.",
+    inputSchema: { app_id: z.number() },
+    handler: async (args, client) => client.request("GET", `wordpress-hosting/${args.app_id}/security`),
+  },
+  {
+    name: "ecp_managed_wordpress_set_xmlrpc",
+    description: "Turn WordPress XML-RPC (xmlrpc.php) on or off for a Managed WordPress site. It is a common brute-force target - only enable it if something needs it (e.g. Jetpack or the WordPress mobile app).",
+    inputSchema: { app_id: z.number(), enabled: z.boolean() },
+    handler: async (args, client) =>
+      client.request("POST", `wordpress-hosting/${args.app_id}/xmlrpc`, { body: { enabled: args.enabled } }),
+  },
 ];

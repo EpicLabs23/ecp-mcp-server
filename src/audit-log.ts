@@ -36,6 +36,12 @@ const REDACT_KEYS = new Set([
   "admin_pass",
   "ecp_password",
   "client_secret",
+  // ecp_managed_wordpress_install / ecp_managed_wordpress_reset_admin_password
+  "admin_password",
+  "db_password",
+  "new_password",
+  // ecp_ssl_upload_certificate
+  "private_key",
 ]);
 
 function redact(value: unknown): unknown {

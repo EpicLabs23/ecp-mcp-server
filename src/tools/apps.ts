@@ -37,6 +37,15 @@ export const appsTools: ToolDef[] = [
       client.request("GET", "apps/directory-tree", { query: { directory: args.directory } }),
   },
   {
+    name: "ecp_apps_detect",
+    description:
+      "Inspect an app directory and detect its app root, tech stack (deploy_type + framework_hint), web root, whether it needs a database, its runtime (asdf_key + version), and suggested install/build/start commands. " +
+      "Read-only: it runs no commands and changes nothing, so it's safe to call before creating or deploying an app. app_dir is a folder name under ~/apps or an absolute path inside it. " +
+      "If root_ambiguous is true, pick one of root_candidates and call this again with it.",
+    inputSchema: { app_dir: z.string() },
+    handler: async (args, client) => client.request("POST", "apps/detect", { body: { app_dir: args.app_dir } }),
+  },
+  {
     name: "ecp_apps_create_from_upload",
     description: "Register an app whose files were already uploaded to app_dir.",
     inputSchema: {
@@ -73,10 +82,22 @@ export const appsTools: ToolDef[] = [
   },
   {
     name: "ecp_apps_update_domain",
-    description: "Point an app at a domain: creates the nginx server block and updates the app's domain record.",
-    inputSchema: { id: z.union([z.string(), z.number()]), domain: z.string() },
-    handler: async (args, client) =>
-      client.request("PATCH", `apps/update-domain/${args.id}`, { body: { domain: args.domain } }),
+    description:
+      "Point an app at a domain (routes the domain to the app and updates the app's domain record), and/or change a PHP app's php_version (the lsphp version its OpenLiteSpeed vhost serves it with). " +
+      "At least one of domain or php_version is required. php_version alone keeps the current domain and reapplies the vhost if the app already has one.",
+    inputSchema: {
+      id: z.union([z.string(), z.number()]),
+      domain: z.string().optional(),
+      php_version: z.string().optional().describe("e.g. '8.3' - see ecp_lsphp_installed_versions."),
+    },
+    handler: async (args, client) => {
+      if (!args.domain && !args.php_version) {
+        throw new Error("Provide domain, php_version, or both.");
+      }
+      return client.request("PATCH", `apps/update-domain/${args.id}`, {
+        body: { domain: args.domain, php_version: args.php_version },
+      });
+    },
   },
   {
     name: "ecp_apps_update_static_domain",
@@ -90,14 +111,20 @@ export const appsTools: ToolDef[] = [
     description:
       "Run one step of an app's deploy lifecycle. action='start'|'stop'|'restart'|'remove' manage the app's supervisor process and return a real result. " +
       "action='install'|'build' run a command in the background via app_root_directory (install_command/build_command) but this tool CANNOT show you their output - check ecp_apps_tail_logs or the app's own state afterward. " +
-      "action='configure' pins an asdf runtime version (stack_version) for the app and also returns no output.",
+      "action='configure' pins an asdf runtime version for the app root (requires both stack_version and asdf_key - without asdf_key nothing is pinned) and also returns no output. " +
+      "ecp_apps_detect gives you deploy_type, framework_hint, asdf_key, web_root_directory and suggested commands to fill these in.",
     inputSchema: {
       action: z.enum(["configure", "install", "build", "start", "stop", "restart", "remove"]),
       app_name: z.string(),
       app_id: z.number().optional(),
       app_root_directory: z.string(),
       deploy_type: z.string().optional(),
+      framework_hint: z.string().optional().describe("Finer-grained stack than deploy_type, e.g. 'laravel' for a php app (from ecp_apps_detect)."),
       stack_version: z.string().optional(),
+      asdf_key: z.string().optional().describe(
+        "The asdf plugin stack_version is a version of (e.g. 'nodejs', 'python', 'golang'). Required for action='configure' to actually pin anything - several deploy types share one plugin, so it isn't derived from deploy_type.",
+      ),
+      web_root_directory: z.string().optional(),
       php_version: z.string().optional().describe(
         "For a PHP app's install/build step: the PHP CLI version to run composer/artisan under (matches the app's own php_version - the one its OpenLiteSpeed vhost serves it with). Omit for non-PHP apps.",
       ),

@@ -8,15 +8,15 @@ It talks to ECP's own API (the same one ECP's web UI uses) as the hosting accoun
 
 ~190 tools across:
 
-- **Apps** — deploy, create from git/upload, manage domains, tail logs, custom commands
-- **Domains / DNS / Nginx** — add/remove domains and subdomains, DNS records, raw nginx config, redirects
+- **Apps** — detect an app's stack/runtime/commands, deploy, create from git/upload, manage domains and PHP version, tail logs, custom commands
+- **Domains / DNS** — add/remove domains and subdomains, DNS records, redirects, port maps
 - **Files** — browse, read/write, move/copy/rename/delete, compress/extract
 - **Databases** — MySQL, MongoDB, MSSQL, and PostgreSQL: create/delete DBs and users, privileges, browse/edit rows or documents, backups
-- **PHP / SSL / System** — PHP versions and `php.ini`, Let's Encrypt/self-signed certificates, disk usage, account settings
+- **PHP / SSL / System** — available PHP (lsphp) versions, Let's Encrypt/self-signed/uploaded certificates, WAF on/off, disk usage, log cleanup, account settings
 - **Supervisor / Crontab** — manage long-running processes and scheduled jobs
 - **asdf** — language runtime version management
 - **Git integrations** — connect GitHub/GitLab/Bitbucket, browse repos, manage per-app deploy webhooks
-- **One-click installers** — WordPress and other blueprint scaffolding
+- **Managed WordPress** — full install, status/event history, cache mode and purge, security status, XML-RPC toggle, admin password reset, one-time wp-admin login
 - **Resource monitoring / notifications**
 - **storage.bd** — backup config and job status
 
