@@ -18,6 +18,7 @@ import { gitIntegrationTools } from "./tools/git-integrations.js";
 import { resourceMonitorTools } from "./tools/resource-monitor.js";
 import { storageBdTools } from "./tools/storage-bd.js";
 import { backupTools } from "./tools/backup.js";
+import { cpanelImportTools } from "./tools/cpanel-import.js";
 import type { ToolDef } from "./tools/types.js";
 
 // Dev-only escape hatch for a self-signed target (see .env.sample). Process-
@@ -82,6 +83,7 @@ const allTools: ToolDef[] = [
   ...resourceMonitorTools,
   ...storageBdTools,
   ...backupTools,
+  ...cpanelImportTools,
 ];
 
 for (const tool of allTools) {
