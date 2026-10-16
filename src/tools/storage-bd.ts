@@ -10,13 +10,14 @@ import type { ToolDef } from "./types.js";
 export const storageBdTools: ToolDef[] = [
   {
     name: "ecp_storage_bd_get_config",
-    description: "Get this account's storage.bd backup config (client_id only - the secret is never returned).",
+    description: "Get this account's storage.bd backup config. client_id is '<Space ID>.<Access key ID>'; the Secret key is never returned.",
     inputSchema: {},
     handler: async (_args, client) => client.request("GET", "storage-bd/config"),
   },
   {
     name: "ecp_storage_bd_set_config",
-    description: "Set this account's storage.bd backup credentials (client_id as '<tenant_id>.<install_id>', client_secret).",
+    description: "Set this account's storage.bd backup space: client_id as '<Space ID>.<Access key ID>' and client_secret as the Secret key, all three as shown in the storage.bd dashboard.",
+
     inputSchema: { client_id: z.string(), client_secret: z.string(), confirm: z.literal(true) },
     handler: async (args, client) => client.request("PATCH", "storage-bd/config", { body: args }),
   },
