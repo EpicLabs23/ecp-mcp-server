@@ -92,6 +92,32 @@ export const domainTools: ToolDef[] = [
     handler: async (args, client) => client.request("POST", "dns/delete-record", { body: args }),
   },
 
+  // Cross-install claim (ehm-api docs/DNS.md): when another EHM install
+  // already holds a domain on the shared nameservers, the account proves
+  // control by publishing a TXT challenge at its registrar/current DNS.
+  {
+    name: "ecp_dns_claim_status",
+    description:
+      "Check whether this account's nameservers hold a domain's DNS zone: status 'owned' | 'pending' (a TXT challenge is waiting - returns the record to publish) | 'not_claimed'. " +
+      "Use when a domain's DNS records can't be managed because another hosting install already holds the zone.",
+    inputSchema: { domain: z.string() },
+    handler: async (args, client) => client.request("GET", `dns/claim-status/domain/${args.domain}`),
+  },
+  {
+    name: "ecp_dns_claim_request",
+    description:
+      "Start (or re-show) a claim for a domain held elsewhere: returns a TXT challenge record. The user must add it at the domain's current DNS, then call ecp_dns_claim_verify.",
+    inputSchema: { domain: z.string() },
+    handler: async (args, client) => client.request("POST", "dns/claim/request", { body: { domain: args.domain } }),
+  },
+  {
+    name: "ecp_dns_claim_verify",
+    description:
+      "Re-check the pending TXT challenge live: 'verified' moves the zone to this account, 'pending' means the record isn't visible yet (DNS propagation can take a while - retry later).",
+    inputSchema: { domain: z.string() },
+    handler: async (args, client) => client.request("POST", "dns/claim/verify", { body: { domain: args.domain } }),
+  },
+
   // Network / port mappings
   {
     name: "ecp_network_port_maps",

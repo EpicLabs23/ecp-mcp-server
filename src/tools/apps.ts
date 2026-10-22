@@ -67,6 +67,7 @@ export const appsTools: ToolDef[] = [
     name: "ecp_apps_create_from_git",
     description:
       "Create an app by cloning a git repo. Either set provider+repo_full_name (clone via a connected git account, see ecp_git_* tools) or repo_url (+ optional repo_username/repo_password for a private repo). " +
+      "With repo_url + repo_username/repo_password, the login is saved (encrypted) for later ecp_apps_git_pull calls. " +
       "Note: the clone runs in the background - this tool returns once the clone STARTS, not once it finishes. For a large repo, check ecp_apps_directory_tree afterward before assuming the files are all there.",
     inputSchema: {
       app_name: z.string(),
@@ -161,8 +162,52 @@ export const appsTools: ToolDef[] = [
   },
   {
     name: "ecp_apps_save_custom_command",
-    description: "Save a named custom command for an app (does not run it - see the blocked command-execution phase in the plan for why 'run' isn't exposed yet).",
+    description: "Save a named custom command for an app (does not run it - ECP's own 'run' streams output only to a browser socket; to run a command and see its output, use ecp_shell_exec).",
     inputSchema: { app_id: z.number(), commands: z.array(z.object({ title: z.string().optional(), command: z.string() })) },
     handler: async (args, client) => client.request("POST", "apps/custom-command", { body: args }),
+  },
+
+  // Git card (handler/apps/git.go) - for apps created from git. Pulls run
+  // real git in ecp-go with output returned, unlike a custom command.
+  {
+    name: "ecp_apps_git_info",
+    description:
+      "Show a git-based app's repo URL, local branch, last commit and locally edited files, and which login a pull will use (connected provider or saved credential - the secret itself is never returned).",
+    inputSchema: { id: z.union([z.string(), z.number()]) },
+    handler: async (args, client) => client.request("GET", `apps/${args.id}/git`),
+  },
+  {
+    name: "ecp_apps_git_pull",
+    description:
+      "Pull the latest commits into a git-based app's folder. Returns status: 'updated' | 'up_to_date' | 'local_changes' (edited tracked files conflict) | 'diverged' (folder has commits the remote doesn't) | 'auth_failed' | 'busy' | 'error', plus the commits and changed files. " +
+      "Pulling doesn't rebuild or restart the app - follow with ecp_apps_deploy_step (install/build/restart) as the app needs. " +
+      "discard_local_changes=true throws away edits to tracked files and local-only commits (git reset --hard to the remote branch; untracked files like .env are kept) and requires confirm: true.",
+    inputSchema: {
+      id: z.union([z.string(), z.number()]),
+      discard_local_changes: z.boolean().optional(),
+      confirm: z.literal(true).optional(),
+    },
+    handler: async (args, client) => {
+      if (args.discard_local_changes && args.confirm !== true) {
+        throw new Error("discard_local_changes=true deletes local edits - pass confirm: true to do it.");
+      }
+      return client.request("POST", `apps/${args.id}/git/pull`, {
+        body: { discard_local_changes: args.discard_local_changes ?? false },
+      });
+    },
+  },
+  {
+    name: "ecp_apps_git_save_credential",
+    description:
+      "Save (or replace) the username + password/token used to pull an app cloned from a pasted private repo URL. Stored encrypted by EHM, never returned. Not needed for apps cloned through a connected git provider.",
+    inputSchema: { id: z.union([z.string(), z.number()]), username: z.string(), password: z.string() },
+    handler: async (args, client) =>
+      client.request("PUT", `apps/${args.id}/git/credential`, { body: { username: args.username, password: args.password } }),
+  },
+  {
+    name: "ecp_apps_git_delete_credential",
+    description: "Remove an app's saved git login. Pulls of a private repo will fail until a new one is saved.",
+    inputSchema: { id: z.union([z.string(), z.number()]), confirm: z.literal(true) },
+    handler: async (args, client) => client.request("DELETE", `apps/${args.id}/git/credential`),
   },
 ];
