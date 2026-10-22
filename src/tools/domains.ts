@@ -36,7 +36,7 @@ export const domainTools: ToolDef[] = [
   {
     name: "ecp_domains_add_domain",
     description: "Add an additional (addon) domain to this account.",
-    inputSchema: { domain: z.string(), dns_server: z.string().nullable().optional() },
+    inputSchema: { domain: z.string() },
     handler: async (args, client) => client.request("POST", "domain/add-domain", { body: args }),
   },
   {
