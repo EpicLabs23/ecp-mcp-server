@@ -29,7 +29,7 @@ export const domainTools: ToolDef[] = [
   },
   {
     name: "ecp_domains_list_additional",
-    description: "List additional (addon) domains only, excluding the primary domain.",
+    description: "List additional (addon) domains and subdomains - every domain an app can use except the primary domain.",
     inputSchema: {},
     handler: async (_args, client) => client.request("GET", "domain/additional-domains"),
   },
