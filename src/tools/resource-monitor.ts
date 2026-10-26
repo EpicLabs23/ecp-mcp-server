@@ -13,6 +13,12 @@ export const resourceMonitorTools: ToolDef[] = [
     handler: async (_args, client) => client.request("GET", "resource-status"),
   },
   {
+    name: "ecp_resource_bandwidth_usage",
+    description: "Get this account's bandwidth use for the current billing cycle (bytes in/out/total, limit, cycle dates) plus recent cycles. tracking is false when bandwidth isn't being collected for this account. Needs ECP 2.0.5+ on EHM 2.0.8+.",
+    inputSchema: {},
+    handler: async (_args, client) => client.request("GET", "resource-status/bandwidth"),
+  },
+  {
     name: "ecp_resource_status_dismiss",
     description: "Dismiss a resource-status warning banner.",
     inputSchema: { resource_type: z.string() },

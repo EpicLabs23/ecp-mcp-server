@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.0 — 2026-10-26
+
+Matches ECP 2.0.5 / EHM 2.0.8.
+
+### Added
+- `ecp_resource_bandwidth_usage`: the account's bandwidth use for the current billing cycle and recent cycles. Needs ECP 2.0.5+ on EHM 2.0.8+.
+- `ecp_files_upload_limit`: the largest upload ECP accepts (also the size cap for SQL imports). Needs ECP 2.0.5+.
+
+### Changed
+- `ecp_domains_add_domain` no longer takes `dns_server` (ECP dropped it).
+- `ecp_domains_list_additional` says it includes subdomains, which it always did.
+- `ecp_files_write` notes ECP 2.0.5's 32 MB cap on non-upload requests.
+- The `ecp_apps_git_*` tools need ECP 2.0.5+ (was "the release after 2.0.4").
+
 ## 0.2.0 — 2026-10-22
 
 ### Added

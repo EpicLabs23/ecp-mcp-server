@@ -1,6 +1,6 @@
 {
   "name": "ecp-mcp-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP server for ECP (Epic Control Panel) - manage a hosting account's apps, domains, databases, files, PHP, SSL and more conversationally through an MCP client like Claude Code or Claude Desktop.",
   "main": "dist/index.js",
   "bin": {

@@ -17,7 +17,7 @@ It talks to ECP's own API (the same one ECP's web UI uses) as the hosting accoun
 - **asdf** — language runtime version management
 - **Git integrations** — connect GitHub/GitLab/Bitbucket, browse repos, manage per-app deploy webhooks
 - **Managed WordPress** — full install, status/event history, cache mode and purge, security status, XML-RPC toggle, admin password reset, one-time wp-admin login
-- **Resource monitoring / notifications**
+- **Resource monitoring / notifications** — resource status, current-cycle bandwidth use
 - **storage.bd** — backup config and job status
 - **cPanel import** — discover and import sites from a cPanel server over SSH
 - **Shell** — run a command in the account's container and get its exit code and output, with your approval for every command (see Security notes)
@@ -28,7 +28,7 @@ It talks to ECP's own API (the same one ECP's web UI uses) as the hosting accoun
 
 - Node.js 18+
 - An ECP hosting account (username + password)
-- Some tools need a recent ECP: `ecp_shell_exec` and cPanel import need ECP 2.0.3+, DNS claim needs 2.0.4+, and the `ecp_apps_git_*` tools need the ECP release after 2.0.4. On an older ECP these tools return a 404 error.
+- Some tools need a recent ECP: `ecp_shell_exec` and cPanel import need ECP 2.0.3+, DNS claim needs 2.0.4+, and the `ecp_apps_git_*` tools, `ecp_files_upload_limit` and `ecp_resource_bandwidth_usage` need 2.0.5+ (bandwidth also needs EHM 2.0.8+). On an older ECP these tools return a 404 error.
 - For `ecp_shell_exec`: an MCP client that supports elicitation (form mode)
 
 ## Install

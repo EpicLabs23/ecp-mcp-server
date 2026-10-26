@@ -14,6 +14,12 @@ import type { ToolDef } from "./types.js";
 
 export const filesTools: ToolDef[] = [
   {
+    name: "ecp_files_upload_limit",
+    description: "Get the largest upload this ECP accepts, in MB (upload_max_size_mb). It also caps the SQL size for the *_import_database tools. Needs ECP 2.0.5+.",
+    inputSchema: {},
+    handler: async (_args, client) => client.request("GET", "file-system/upload-limit"),
+  },
+  {
     name: "ecp_files_list",
     description: "List files/folders in a directory.",
     inputSchema: { directory: z.string().optional(), hidden_files: z.boolean().optional() },
@@ -47,7 +53,7 @@ export const filesTools: ToolDef[] = [
   },
   {
     name: "ecp_files_write",
-    description: "Overwrite a text file's content (creates it if it doesn't exist). Can break a running app if it's a config/env/source file - review the current content first.",
+    description: "Overwrite a text file's content (creates it if it doesn't exist). Can break a running app if it's a config/env/source file - review the current content first. ECP 2.0.5+ rejects requests over 32 MB.",
     inputSchema: { file_path: z.string(), file_content: z.string(), confirm: z.literal(true) },
     handler: async (args, client) =>
       client.request("POST", "code-editor/file", {
