@@ -121,11 +121,13 @@ export const filesTools: ToolDef[] = [
   },
   {
     name: "ecp_files_compress",
-    description: "Compress one or more files/folders into an archive.",
+    description:
+      "Compress one or more files/folders (paths relative to current_directory) into an archive in current_directory. Fails if the archive already exists.",
     inputSchema: {
       file_paths: z.array(z.string()),
       output_filename: z.string(),
       current_directory: z.string(),
+      format: z.enum(["zip", "tar", "tar.gz", "tar.bz2", "tar.xz"]).optional().describe("Archive format; default zip"),
     },
     handler: async (args, client) =>
       client.request("POST", "file-system/compress", {
@@ -133,12 +135,13 @@ export const filesTools: ToolDef[] = [
           filePaths: args.file_paths,
           outputFilename: args.output_filename,
           currentDirectory: args.current_directory,
+          ...(args.format ? { format: args.format } : {}),
         },
       }),
   },
   {
     name: "ecp_files_extract",
-    description: "Extract an archive into a destination directory.",
+    description: "Extract an archive (.zip, .tar, .tar.gz/.tgz, .tar.bz2, .tar.xz) into a destination directory.",
     inputSchema: { file_path: z.string(), destination: z.string() },
     handler: async (args, client) => client.request("POST", "file-system/extract", { body: args }),
   },
