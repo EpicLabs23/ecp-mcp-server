@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `ecp_files_change_permission` takes `recursive`. `false` changes only the folder itself, not its contents. Omitting it keeps the old behaviour (the folder and everything inside). Needs the ECP release after 2.0.6; older ECP ignores `false`.
+
 ## 0.3.0 — 2026-10-26
 
 Matches ECP 2.0.5 / EHM 2.0.8.

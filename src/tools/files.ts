@@ -104,8 +104,19 @@ export const filesTools: ToolDef[] = [
   },
   {
     name: "ecp_files_change_permission",
-    description: "chmod a file (e.g. new_permission: '644').",
-    inputSchema: { current_directory: z.string(), file_name: z.string(), new_permission: z.string() },
+    description:
+      "chmod a file or folder (e.g. new_permission: '644'). For a folder, ECP applies the mode to the folder and everything inside it unless recursive is false.",
+    inputSchema: {
+      current_directory: z.string(),
+      file_name: z.string(),
+      new_permission: z.string(),
+      recursive: z
+        .boolean()
+        .optional()
+        .describe(
+          "Folders only. false changes just the folder itself; omitted or true also changes every file and subfolder to the same mode (files usually want 644, folders 755). Needs the ECP release after 2.0.6; older ECP ignores false and changes everything.",
+        ),
+    },
     handler: async (args, client) => client.request("POST", "file-system/change-permission", { body: args }),
   },
   {
