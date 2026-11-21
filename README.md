@@ -130,6 +130,8 @@ npm run build
 npm run inspect        # opens the MCP Inspector to test tools manually
 ```
 
+Releasing the server and the plugin: see [`docs/RELEASE.md`](./docs/RELEASE.md).
+
 ## License
 
 MIT
