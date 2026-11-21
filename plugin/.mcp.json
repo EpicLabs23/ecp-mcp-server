@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "ecp": {
+      "command": "npx",
+      "args": ["-y", "ecp-mcp-server@^0.4.0"],
+      "env": {
+        "ECP_URL": "${user_config.panel_url}",
+        "ECP_ACCOUNT_USERNAME": "${user_config.username}",
+        "ECP_ACCOUNT_PASSWORD": "${user_config.password}",
+        "ECP_REMEMBER": "true"
+      }
+    }
+  }
+}

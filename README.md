@@ -24,6 +24,19 @@ It talks to ECP's own API (the same one ECP's web UI uses) as the hosting accoun
 
 **What it deliberately does *not* do:** start a local file backup or restore. Those need a live browser connection for progress; use ECP's own web UI.
 
+## Easiest: the ECP plugin for Claude
+
+For people who just want to run their hosting from chat, without editing config files: install the **ECP plugin**, which bundles this server with step-by-step guides for websites, domains, HTTPS, databases, files and troubleshooting. In Claude Code:
+
+```
+/plugin marketplace add EpicLabs23/ecp-mcp-server
+/plugin install ecp@epiclabs23
+```
+
+It asks for your ECP panel address, username and password (the password goes to your system's secure storage). See [`plugin/README.md`](./plugin/README.md).
+
+The rest of this page is for using the server directly with any MCP client.
+
 ## Requirements
 
 - Node.js 18+
@@ -51,7 +64,7 @@ This server is configured entirely through environment variables — no config f
 
 | Variable | Required | Description |
 |---|---|---|
-| `ECP_API_BASE_URL` | yes | Your ECP instance's own API base URL, e.g. `https://yourdomain.com:2324/api` — **not** EHM's API. |
+| `ECP_URL` | yes | Your ECP address: `yourdomain.com`, the panel address `https://yourdomain.com:2323`, or the API URL `https://yourdomain.com:2324/api` all work. (`ECP_API_BASE_URL` is the older name and still works.) |
 | `ECP_ACCOUNT_USERNAME` | yes | The hosting account to log in as. One server instance manages one account. |
 | `ECP_ACCOUNT_PASSWORD` | yes | That account's password. |
 | `ECP_REMEMBER` | no | `true` for a 30-day session instead of 24h. |
@@ -64,7 +77,7 @@ This server is configured entirely through environment variables — no config f
 ```bash
 claude mcp add ecp-mcp-server \
   --scope user \
-  -e ECP_API_BASE_URL=https://yourdomain.com:2324/api \
+  -e ECP_URL=https://yourdomain.com:2323 \
   -e ECP_ACCOUNT_USERNAME=youraccount \
   -e ECP_ACCOUNT_PASSWORD=yourpassword \
   -- npx ecp-mcp-server
@@ -83,7 +96,7 @@ Add to your `claude_desktop_config.json`:
       "command": "npx",
       "args": ["ecp-mcp-server"],
       "env": {
-        "ECP_API_BASE_URL": "https://yourdomain.com:2324/api",
+        "ECP_URL": "https://yourdomain.com:2323",
         "ECP_ACCOUNT_USERNAME": "youraccount",
         "ECP_ACCOUNT_PASSWORD": "yourpassword"
       }

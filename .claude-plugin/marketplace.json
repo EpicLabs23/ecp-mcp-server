@@ -1,0 +1,18 @@
+{
+  "name": "epiclabs23",
+  "owner": {
+    "name": "Epic Labs 23",
+    "url": "https://github.com/EpicLabs23"
+  },
+  "metadata": {
+    "description": "Claude plugins for Epic Hosting (EHM / ECP)."
+  },
+  "plugins": [
+    {
+      "name": "ecp",
+      "source": "./plugin",
+      "description": "Run your ECP hosting account from chat: websites, domains, HTTPS, databases, files and backups, no server knowledge needed.",
+      "category": "productivity"
+    }
+  ]
+}

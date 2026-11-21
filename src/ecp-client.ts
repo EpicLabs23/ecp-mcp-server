@@ -76,17 +76,33 @@ export class EcpClient {
   }
 
   private async login(): Promise<void> {
-    const res = await fetch(`${this.baseUrl}/auth/login`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        username: this.username,
-        password: this.password,
-        remember: this.remember,
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${this.baseUrl}/auth/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          username: this.username,
+          password: this.password,
+          remember: this.remember,
+        }),
+      });
+    } catch (err) {
+      // fetch only throws for transport problems (DNS, refused, TLS), and its
+      // own message is just "fetch failed" - name the address and the cause.
+      const cause = (err as { cause?: { code?: string; message?: string } }).cause;
+      const detail = cause?.code ?? cause?.message ?? (err as Error).message;
+      throw new Error(
+        `Couldn't reach ECP at ${this.baseUrl} (${detail}). Check the panel address in the settings and that the server is online.`,
+      );
+    }
     if (!res.ok) {
       const text = await res.text().catch(() => "");
+      if (res.status === 400 || res.status === 401 || res.status === 403) {
+        throw new Error(
+          `ECP didn't accept the username or password (${res.status}). Check them in the settings - they're the same ones you use to log into the ECP panel. ${text}`.trim(),
+        );
+      }
       throw new Error(`ECP login failed (${res.status}): ${text}`);
     }
     this.captureRefreshCookie(res);

@@ -3,6 +3,7 @@ import "dotenv/config";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { EcpClient } from "./ecp-client.js";
+import { loadConfig, panelUrlFromApiBase } from "./config.js";
 import { auditLog } from "./audit-log.js";
 import { accountTools } from "./tools/account.js";
 import { appsTools } from "./tools/apps.js";
@@ -33,33 +34,34 @@ if ((process.env.ECP_TLS_INSECURE ?? "false").toLowerCase() === "true") {
   );
 }
 
-function requireEnv(name: string): string {
-  const value = process.env[name]?.trim();
-  if (!value) {
-    throw new Error(`Missing required env var ${name} (see .env.sample)`);
-  }
-  return value;
-}
-
 // Same relative path from src/ (tsx) and dist/ (built), and package.json
 // always ships in the npm tarball - keeps the handshake version in step with
 // the published one.
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 
-const apiBaseUrl = requireEnv("ECP_API_BASE_URL");
-
-const client = new EcpClient({
-  baseUrl: apiBaseUrl,
-  username: requireEnv("ECP_ACCOUNT_USERNAME"),
-  password: requireEnv("ECP_ACCOUNT_PASSWORD"),
-  remember: (process.env.ECP_REMEMBER ?? "false").toLowerCase() === "true",
-});
+// A missing or bad setting doesn't stop the server: it still starts, and every
+// tool answers with what's wrong. In a chat client a server that exits at
+// launch just shows up as "failed", which tells a non-technical user nothing.
+const configResult = loadConfig();
+const client = configResult.ok
+  ? new EcpClient({
+      baseUrl: configResult.config.apiBaseUrl,
+      username: configResult.config.username,
+      password: configResult.config.password,
+      remember: configResult.config.remember,
+    })
+  : null;
+const setupProblem = configResult.ok
+  ? null
+  : `${configResult.problem} Add the missing details in this MCP server's settings (in the ECP plugin: its options; otherwise the ECP_URL, ECP_ACCOUNT_USERNAME and ECP_ACCOUNT_PASSWORD environment variables), then restart the chat app.`;
+if (setupProblem) console.error(`[ecp-mcp-server] ${setupProblem}`);
 
 // ecp-go serves its browser UI on port 2323 and its API (what this server
 // talks to) on 2324, same host - derived here so the "go do this in ecp-ui"
 // guidance below points at a real, clickable URL instead of a vague
 // pointer.
-const ecpUiUrl = apiBaseUrl.replace(/:2324\/api\/?$/, ":2323");
+const apiBaseUrl = configResult.ok ? configResult.config.apiBaseUrl : configResult.apiBaseUrl;
+const ecpUiUrl = apiBaseUrl ? panelUrlFromApiBase(apiBaseUrl) : "your ECP panel (port 2323 of your domain)";
 
 const server = new McpServer(
   { name: "ecp-mcp-server", version },
@@ -116,6 +118,7 @@ for (const tool of allTools) {
     { description: tool.description, inputSchema: tool.inputSchema },
     async (args) => {
       try {
+        if (!client) throw new Error(setupProblem ?? "ECP isn't set up yet.");
         const result = await tool.handler(args, client, toolContext);
         await auditLog({ tool: tool.name, args, result: "success" });
         return {

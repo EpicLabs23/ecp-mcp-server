@@ -94,9 +94,10 @@ export const systemTools: ToolDef[] = [
   },
   {
     name: "ecp_system_update",
-    description: "Update account/hosting settings (hosting_environment, hosting_version) or ECP password. Requires the account's own current password. Account-wide impact - review carefully.",
+    description:
+      "Apply an ECP/hosting update (what ECP's own Update button does): EHM rebuilds this account's container on the current or given hosting environment/version, then restores logins, settings and site configs. Files and databases are kept, but every site restarts and is briefly offline. Check ecp_system_check_for_update first. It does not change any password.",
     inputSchema: {
-      ecp_password: z.string(),
+      ecp_password: z.string().optional().describe("Not used by ECP; accepted for compatibility with older clients."),
       hosting_environment: z.string().optional(),
       hosting_version: z.string().optional(),
       confirm: z.literal(true),

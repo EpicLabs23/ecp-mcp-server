@@ -1,9 +1,19 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — 2026-11-21
+
+Ships with the ECP plugin for Claude (`plugin/`), which bundles this server.
 
 ### Added
+- `ECP_URL`: your ECP address in any form people actually have it - `example.com`, the panel address `https://example.com:2323`, or the API URL. `ECP_API_BASE_URL` still works.
+- `ecp_asdf_recommend`: picks a runtime version for an app that doesn't pin one exactly (newest LTS within its declared constraints).
+- `ecp_files_compress` takes an optional `format` (zip, tar, tar.gz, tar.bz2, tar.xz). Older ECP ignores it and makes a zip.
 - `ecp_files_change_permission` takes `recursive`. `false` changes only the folder itself, not its contents. Omitting it keeps the old behaviour (the folder and everything inside). Needs the ECP release after 2.0.6; older ECP ignores `false`.
+
+### Changed
+- Missing or invalid settings no longer stop the server at launch. It starts, and every tool replies with what's missing and where to set it, so the chat app shows a useful message instead of a failed server.
+- Login errors say what went wrong in plain words: wrong username/password, or the ECP address can't be reached (with the cause).
+- `ecp_system_update` is described as what it actually does: apply an ECP update by rebuilding the account's container (sites restart; files and databases kept). It never changed a password. `ecp_password` is now optional, as ECP doesn't use it.
 
 ## 0.3.0 — 2026-10-26
 

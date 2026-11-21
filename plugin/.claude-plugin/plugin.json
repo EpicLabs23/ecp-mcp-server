@@ -1,0 +1,35 @@
+{
+  "name": "ecp",
+  "version": "0.1.0",
+  "description": "Run your ECP (Epic Control Panel) hosting account from chat: launch WordPress or app sites, connect domains and HTTPS, manage databases, files and backups, and fix problems, with no server knowledge needed.",
+  "author": {
+    "name": "Epic Labs 23",
+    "url": "https://github.com/EpicLabs23"
+  },
+  "homepage": "https://github.com/EpicLabs23/ecp-mcp-server/tree/master/plugin#readme",
+  "repository": "https://github.com/EpicLabs23/ecp-mcp-server",
+  "license": "MIT",
+  "keywords": ["ecp", "hosting", "wordpress", "domains", "ssl", "databases", "control-panel"],
+  "icon": "./.claude-plugin/icon.png",
+  "userConfig": {
+    "panel_url": {
+      "type": "string",
+      "title": "ECP panel address",
+      "description": "The address you open to log into ECP, e.g. https://example.com:2323 (just example.com works too).",
+      "required": true
+    },
+    "username": {
+      "type": "string",
+      "title": "ECP username",
+      "description": "The username you log into ECP with.",
+      "required": true
+    },
+    "password": {
+      "type": "string",
+      "title": "ECP password",
+      "description": "The password you log into ECP with. Kept in your system's secure storage.",
+      "sensitive": true,
+      "required": true
+    }
+  }
+}
