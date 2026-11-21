@@ -46,7 +46,7 @@ export const appsTools: ToolDef[] = [
   {
     name: "ecp_apps_detect",
     description:
-      "Inspect an app directory and detect its app root, tech stack (deploy_type + framework_hint), web root, whether it needs a database, its runtime (asdf_key + version), and suggested install/build/start commands. " +
+      "Inspect an app directory and detect its app root, tech stack (deploy_type + framework_hint), web root, whether it needs a database, its runtime (asdf_key + version, or runtime_constraints when there's no exact pin - feed those to ecp_asdf_recommend), and suggested install/build/start commands. " +
       "Read-only: it runs no commands and changes nothing, so it's safe to call before creating or deploying an app. app_dir is a folder name under ~/apps or an absolute path inside it. " +
       "If root_ambiguous is true, pick one of root_candidates and call this again with it.",
     inputSchema: { app_dir: z.string() },

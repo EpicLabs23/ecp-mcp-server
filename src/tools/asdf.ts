@@ -34,6 +34,18 @@ export const asdfTools: ToolDef[] = [
     handler: async (args, client) => client.request("GET", `asdf/list-installed/${args.name}`),
   },
   {
+    name: "ecp_asdf_recommend",
+    description:
+      "Pick a runtime version for an app that doesn't pin one exactly (ecp_apps_detect returned no runtime_version). " +
+      "Pass runtime_constraints from ecp_apps_detect as constraints (or [] if there were none). Returns the newest LTS release " +
+      "(newest stable for tools with no LTS, like python) that satisfies all of them - e.g. engines.node \">=22\" gets the latest Node LTS, not 22. " +
+      "installed_match is an installed version on that line to use as-is; otherwise install `version`. relaxed=true means no release met every upper bound, so only minimums were applied. " +
+      "Prefer this over choosing a version yourself.",
+    inputSchema: { name: z.string(), constraints: z.array(z.string()).default([]) },
+    handler: async (args, client) =>
+      client.request("POST", "asdf/recommend", { body: { name: args.name, constraints: args.constraints } }),
+  },
+  {
     name: "ecp_asdf_install",
     description:
       "Start installing a plugin version. Returns once the install STARTS - building can take minutes (python compiles from source). " +
