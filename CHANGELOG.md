@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.1 — 2026-11-26
+
+### Fixed
+- `ecp_files_upload` / `sql_file_path` only open regular files. A named pipe or device path is refused before it's opened, so it can't hang the tool call or trigger a device's side effects, including for files outside the allowed folders that weren't approved.
+
 ## 0.5.0 — 2026-11-26
 
 Plugin 0.2.0 uses this release.

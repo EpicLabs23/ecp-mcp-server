@@ -100,13 +100,36 @@ export async function openLocalUpload(
   // file that's sent: swapping in a symlink after the check can't redirect
   // it. O_NOFOLLOW refuses a final-component symlink at open; the second
   // realpath + inode comparison catches a swapped parent folder.
-  const handle = await open(real, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0)).catch(() => null);
+  // Only regular files are opened at all: opening a FIFO blocks and opening a
+  // device can have side effects. O_NONBLOCK covers a FIFO swapped in
+  // between this stat and the open (the inode check below then rejects it).
+  const pre = await stat(real).catch(() => null);
+  if (!pre?.isFile()) {
+    throw inside
+      ? new Error(
+          pre
+            ? `${given} isn't a file. To send a folder, compress it into a .zip first, upload that, then ecp_files_extract it.`
+            : `No file at ${given} on this computer.`,
+        )
+      : outsideError();
+  }
+  const handle = await open(
+    real,
+    constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0),
+  ).catch(() => null);
   if (!handle) throw inside ? new Error(`Can't open ${given} on this computer.`) : outsideError();
   try {
     const info = await handle.stat();
     const again = await realpath(given).catch(() => null);
     const againInfo = again ? await stat(again).catch(() => null) : null;
-    if (!againInfo || again !== real || againInfo.ino !== info.ino || againInfo.dev !== info.dev) {
+    if (
+      !againInfo ||
+      again !== real ||
+      againInfo.ino !== info.ino ||
+      againInfo.dev !== info.dev ||
+      pre.ino !== info.ino ||
+      pre.dev !== info.dev
+    ) {
       throw inside ? new Error(`${given} changed while it was being checked. Try again.`) : outsideError();
     }
     if (!info.isFile()) {
