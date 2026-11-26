@@ -1,6 +1,6 @@
 {
   "name": "ecp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Run your ECP (Epic Control Panel) hosting account from chat: launch WordPress or app sites, connect domains and HTTPS, manage databases, files and backups, and fix problems, with no server knowledge needed.",
   "author": {
     "name": "Epic Labs 23",

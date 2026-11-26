@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-11-26
+
+Plugin 0.2.0 uses this release.
 
 ### Added
 - `ecp_files_upload`: upload a file from this computer to the account, text or binary, any size up to `ecp_files_upload_limit`. It's streamed from disk to ECP's own upload route, so it never passes through the chat and isn't held in memory. Files outside the client's working folders and the new `ECP_UPLOAD_DIRS` need the user's approval in a prompt.
