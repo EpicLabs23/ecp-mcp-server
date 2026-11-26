@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `ecp_files_upload`: upload a file from this computer to the account, text or binary, any size up to `ecp_files_upload_limit`. It's streamed from disk to ECP's own upload route, so it never passes through the chat and isn't held in memory. Files outside the client's working folders and the new `ECP_UPLOAD_DIRS` need the user's approval in a prompt.
+- `ecp_mysql_import_database` / `ecp_postgres_import_database` take `sql_file_path`, a .sql file on this computer, as well as `sql_content`. Pass one of the two.
+
+### Fixed
+- Uploading anything bigger than what fits in a chat message. The only way to put a file on the account was `ecp_files_write`, which sends the content through the chat as text (and ECP caps it at 32 MB), so big and binary files couldn't be uploaded at all.
+
 ## 0.4.0 — 2026-11-21
 
 Ships with the ECP plugin for Claude (`plugin/`), which bundles this server.

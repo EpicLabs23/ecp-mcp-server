@@ -44,7 +44,7 @@ Don't turn on any "approve everything automatically" setting for this plugin.
 
 ## What still needs the ECP panel
 
-A few things need your web browser: uploading big files from your computer (use the panel's File Manager), starting or restoring a full file backup, and approving a GitHub/GitLab/Bitbucket connection. Claude tells you exactly where to click when you hit one of these.
+A few things need your web browser: starting or restoring a full file backup, and approving a GitHub/GitLab/Bitbucket connection. Claude tells you exactly where to click when you hit one of these.
 
 ## What's inside
 

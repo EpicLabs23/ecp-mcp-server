@@ -8,6 +8,11 @@ export interface ToolContext {
    * client can't show the prompt, so a caller relying on it fails closed.
    */
   askUser: (message: string) => Promise<boolean>;
+  /**
+   * Local folders the client has shared with this server (MCP roots, e.g.
+   * Claude Code's working folders), as paths. Empty if the client has none.
+   */
+  listRoots: () => Promise<string[]>;
 }
 
 export interface ToolDef<Shape extends z.ZodRawShape = z.ZodRawShape> {

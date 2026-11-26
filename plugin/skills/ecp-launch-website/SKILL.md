@@ -34,7 +34,7 @@ Afterwards these help: `ecp_managed_wordpress_purge_cache` (changes not showing)
 
 1. **Get the code onto the account**:
    - GitHub/GitLab/Bitbucket: check `ecp_git_list_connections`. If connected, find the repo with `ecp_git_list_repos` and use `ecp_apps_create_from_git` with `provider` + `repo_full_name`. If not connected and the repo is private, either give them the link from `ecp_git_authorize_url` to approve in the browser, or use `repo_url` with a username + access token they create. Public repo: `repo_url` alone.
-   - A zip they have: they upload it in the ECP panel's File Manager into `~/apps/<folder>` (chat can't receive large uploads), then `ecp_files_extract` it and register it with `ecp_apps_create_from_upload`.
+   - A zip or folder on their computer: `ecp_files_upload` the zip into `apps/<folder>` (zip a folder first), `ecp_files_extract` it there, then register it with `ecp_apps_create_from_upload`.
 2. **Find out what it is**: `ecp_apps_detect` on the app folder. It tells you the stack, runtime, web root, whether it needs a database, and suggested install/build/start commands. If `root_ambiguous`, pick the right candidate and call again.
 3. **Runtime**: if detect gave no exact version, `ecp_asdf_recommend` with its `runtime_constraints`; install with `ecp_asdf_install` if missing (it takes minutes; poll `ecp_asdf_list_installed_versions`), then `ecp_apps_deploy_step` action `configure` with `stack_version` + `asdf_key`.
 4. **Database** if needed: create one (**ecp-databases**) and put the connection details in the app's settings file (usually `.env`) with `ecp_files_write`, after showing the user what you'll write. Get host/port from `ecp_db_connection_info`.

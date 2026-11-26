@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolDef } from "./types.js";
+import { importSqlSource } from "../local-files.js";
 
 // Maps to router/database.go (MySQL + engine-agnostic status/connection-info)
 // and the MySQL-user/privilege portion of router/database.go that proxies to
@@ -137,16 +138,21 @@ export const databaseTools: ToolDef[] = [
   },
   {
     name: "ecp_mysql_import_database",
-    description: "Import a .sql dump into an existing MySQL database, overwriting its content. Irreversible - pass the full SQL as text.",
-    inputSchema: { db_name: z.string(), sql_content: z.string(), confirm: z.literal(true) },
-    handler: async (args, client) =>
+    description: "Import a .sql dump into an existing MySQL database, overwriting its content. Irreversible. Give the dump as a .sql file on this computer (sql_file_path - any size up to ecp_files_upload_limit, streamed from disk) or, for a small one, as text (sql_content).",
+    inputSchema: {
+          db_name: z.string(),
+          sql_file_path: z.string().optional().describe("Absolute path of a .sql file on this computer"),
+          sql_content: z.string().optional().describe("The SQL as text, for a small dump"),
+          confirm: z.literal(true),
+        },
+    handler: async (args, client, ctx) =>
       client.requestMultipart(
         "database/importDatabase",
         { db_name: args.db_name },
         {
           fieldName: "file",
           fileName: `${args.db_name}.sql`,
-          content: String(args.sql_content),
+          content: await importSqlSource(args as { db_name: string; sql_content?: string; sql_file_path?: string }, client, ctx),
           contentType: "application/sql",
         },
       ),

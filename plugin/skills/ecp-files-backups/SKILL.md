@@ -22,7 +22,7 @@ Read **ecp-assistant** first if it isn't loaded.
 
 ## Uploading and downloading
 
-Chat can create and edit text files. For big files, images or zips from the user's computer, send them to the File Manager in the ECP panel in the browser (port 2323 of their domain), then continue here (e.g. `ecp_files_extract` an uploaded zip). `ecp_files_upload_limit` gives the largest upload allowed.
+To put a file from the user's computer on the account (images, zips, videos, a whole site), use `ecp_files_upload` with its full local path. It handles any size up to `ecp_files_upload_limit` and doesn't go through the chat, so use it instead of `ecp_files_write` for anything that isn't a small text edit. For a folder, zip it on their computer first, upload the zip, then `ecp_files_extract` it. If the file is outside the folders this chat can see, they'll get an approval prompt naming the file. If their app can't show one, ask them to move the file into their project folder or set the plugin's "Upload folder" option. Only if the file isn't on this computer at all, send them to the File Manager in the ECP panel (port 2323 of their domain).
 
 ## Organising
 

@@ -30,6 +30,12 @@
       "description": "The password you log into ECP with. Kept in your system's secure storage.",
       "sensitive": true,
       "required": true
+    },
+    "upload_folder": {
+      "type": "directory",
+      "title": "Upload folder",
+      "description": "Optional. A folder on your computer Claude may upload files from without asking each time, e.g. your website's folder. Files elsewhere ask for your OK first.",
+      "required": false
     }
   }
 }

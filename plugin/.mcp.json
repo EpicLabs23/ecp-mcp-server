@@ -7,7 +7,8 @@
         "ECP_URL": "${user_config.panel_url}",
         "ECP_ACCOUNT_USERNAME": "${user_config.username}",
         "ECP_ACCOUNT_PASSWORD": "${user_config.password}",
-        "ECP_REMEMBER": "true"
+        "ECP_REMEMBER": "true",
+        "ECP_UPLOAD_DIRS": "${user_config.upload_folder}"
       }
     }
   }

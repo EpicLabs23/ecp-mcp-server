@@ -30,7 +30,7 @@ MySQL/MariaDB is always available and is what WordPress and most PHP apps use; d
 - **Off-site (storage.bd)**: `ecp_storage_bd_get_config`. If it isn't set up, the user creates a Space in their storage.bd dashboard and gives you the Space ID, access key ID and secret key; save them with `ecp_storage_bd_set_config` (after a yes). Then `ecp_mysql_backup_to_storage_bd`; check progress with `ecp_storage_bd_job_status`.
 - **Restore**: `ecp_mysql_restore_from_storage_bd` overwrites the current data. Take a fresh backup first, confirm the snapshot date with the user, get a yes.
 - **Quick copy**: `ecp_mysql_export_database` returns SQL text; fine for small databases only. For large ones use storage.bd.
-- **Import** (`ecp_mysql_import_database`) overwrites the database. The SQL size limit is `ecp_files_upload_limit`; bigger files should be uploaded in the ECP panel.
+- **Import** (`ecp_mysql_import_database`, `ecp_postgres_import_database`) overwrites the database. For a .sql file on the user's computer pass `sql_file_path` (its full path): it's streamed, up to `ecp_files_upload_limit`. Use `sql_content` only for a few lines of SQL.
 
 ## Users and permissions
 

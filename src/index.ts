@@ -23,6 +23,7 @@ import { cpanelImportTools } from "./tools/cpanel-import.js";
 import { shellTools } from "./tools/shell.js";
 import type { ToolContext, ToolDef } from "./tools/types.js";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 
 // Dev-only escape hatch for a self-signed target (see .env.sample). Process-
 // wide and opt-in only - never the default, since it weakens every HTTPS
@@ -109,6 +110,17 @@ const toolContext: ToolContext = {
       requestedSchema: { type: "object", properties: {} },
     });
     return result.action === "accept";
+  },
+  listRoots: async () => {
+    if (!server.server.getClientCapabilities()?.roots) return [];
+    try {
+      const { roots } = await server.server.listRoots();
+      return roots
+        .filter((root) => root.uri.startsWith("file://"))
+        .map((root) => fileURLToPath(root.uri));
+    } catch {
+      return [];
+    }
   },
 };
 

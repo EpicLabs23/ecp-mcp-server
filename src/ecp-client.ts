@@ -1,3 +1,10 @@
+import { randomUUID } from "node:crypto";
+import { createReadStream } from "node:fs";
+import { request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
+
 // Client for ECP's own API (ecp-go), never EHM-API directly - see the plan
 // doc for why. Mirrors ecp-ui's own auth.js: log in once, hold the
 // refresh_token httpOnly cookie ourselves (there's no browser to do it for
@@ -32,6 +39,18 @@ function extractRefreshCookie(setCookieHeaders: string[]): string | null {
     if (match) return match[1];
   }
   return null;
+}
+
+/** A file on this computer to send as an upload, already checked (local-files.ts). */
+export interface LocalFile {
+  path: string;
+  size: number;
+}
+
+// Per the HTML form-data encoding: '"' and line breaks in a name or filename
+// are percent-encoded, which is what Go's multipart reader expects.
+function escapeFormName(value: string): string {
+  return value.replace(/"/g, "%22").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
 }
 
 function safeJsonParse(text: string): unknown {
@@ -180,38 +199,95 @@ export class EcpClient {
     return data as T;
   }
 
-  /** multipart/form-data POST, e.g. for importDatabase's file upload. */
+  /**
+   * multipart/form-data POST, e.g. for importDatabase's file upload. content
+   * is either the file's text, or a file on this computer, which is streamed
+   * from disk. The body is built by hand and sent with node:http because
+   * Node's fetch holds a FormData or streamed body in memory (measured:
+   * ~700 MB peak RSS for a 600 MB file, ~90 MB this way).
+   */
   async requestMultipart<T = unknown>(
     path: string,
     fields: Record<string, unknown>,
-    file: { fieldName: string; fileName: string; content: string; contentType?: string },
+    file: { fieldName: string; fileName: string; content: string | LocalFile; contentType?: string },
+    query?: Record<string, unknown>,
   ): Promise<T> {
     const token = await this.ensureAccessToken();
     const url = new URL(`${this.baseUrl}/${path.replace(/^\/+/, "")}`);
-
-    const buildForm = () => {
-      const form = new FormData();
-      for (const [key, value] of Object.entries(fields)) {
-        if (value !== undefined && value !== null) form.set(key, String(value));
+    if (query) {
+      for (const [key, value] of Object.entries(query)) {
+        if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
       }
-      form.set(
-        file.fieldName,
-        new Blob([file.content], { type: file.contentType ?? "application/octet-stream" }),
-        file.fileName,
-      );
-      return form;
-    };
-
-    const doFetch = (bearer: string) =>
-      fetch(url, { method: "POST", headers: { authorization: `Bearer ${bearer}` }, body: buildForm() });
-
-    let res = await doFetch(token);
-    if (res.status === 401) {
-      await this.refresh();
-      res = await doFetch(this.accessToken as string);
     }
 
-    const text = await res.text();
+    const boundary = `----ecp-mcp-${randomUUID()}`;
+    let head = "";
+    for (const [key, value] of Object.entries(fields)) {
+      if (value === undefined || value === null) continue;
+      head += `--${boundary}\r\ncontent-disposition: form-data; name="${escapeFormName(key)}"\r\n\r\n${String(value)}\r\n`;
+    }
+    head +=
+      `--${boundary}\r\ncontent-disposition: form-data; name="${escapeFormName(file.fieldName)}"; filename="${escapeFormName(file.fileName)}"\r\n` +
+      `content-type: ${file.contentType ?? "application/octet-stream"}\r\n\r\n`;
+    const headBytes = Buffer.from(head, "utf8");
+    const tailBytes = Buffer.from(`\r\n--${boundary}--\r\n`, "utf8");
+    const content = file.content;
+    const textBytes = typeof content === "string" ? Buffer.from(content, "utf8") : null;
+    const length = headBytes.length + tailBytes.length + (textBytes ? textBytes.length : (content as LocalFile).size);
+
+    const body = (): Readable => {
+      if (textBytes) return Readable.from([Buffer.concat([headBytes, textBytes, tailBytes])]);
+      const local = content as LocalFile;
+      return Readable.from(
+        (async function* () {
+          yield headBytes;
+          // A file that changed size since it was checked would make the
+          // body disagree with content-length - fail rather than send it.
+          let sent = 0;
+          for await (const chunk of createReadStream(local.path)) {
+            sent += (chunk as Buffer).length;
+            yield chunk as Buffer;
+          }
+          if (sent !== local.size) throw new Error(`${local.path} changed while it was being uploaded.`);
+          yield tailBytes;
+        })(),
+      );
+    };
+
+    const send = (bearer: string) =>
+      new Promise<{ status: number; ok: boolean; text: string }>((resolve, reject) => {
+        const request = url.protocol === "https:" ? httpsRequest : httpRequest;
+        const req = request(
+          url,
+          {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${bearer}`,
+              "content-type": `multipart/form-data; boundary=${boundary}`,
+              "content-length": String(length),
+            },
+          },
+          (res) => {
+            const chunks: Buffer[] = [];
+            res.on("data", (chunk: Buffer) => chunks.push(chunk));
+            res.on("end", () => {
+              const status = res.statusCode ?? 0;
+              resolve({ status, ok: status >= 200 && status < 300, text: Buffer.concat(chunks).toString("utf8") });
+            });
+            res.on("error", reject);
+          },
+        );
+        req.on("error", reject);
+        pipeline(body(), req).catch(reject);
+      });
+
+    let res = await send(token);
+    if (res.status === 401) {
+      await this.refresh();
+      res = await send(this.accessToken as string);
+    }
+
+    const text = res.text;
     const data = text ? safeJsonParse(text) : undefined;
     if (!res.ok) {
       throw new Error(`ECP API POST ${path} failed (${res.status}): ${text}`);

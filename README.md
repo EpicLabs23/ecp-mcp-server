@@ -68,6 +68,7 @@ This server is configured entirely through environment variables — no config f
 | `ECP_ACCOUNT_USERNAME` | yes | The hosting account to log in as. One server instance manages one account. |
 | `ECP_ACCOUNT_PASSWORD` | yes | That account's password. |
 | `ECP_REMEMBER` | no | `true` for a 30-day session instead of 24h. |
+| `ECP_UPLOAD_DIRS` | no | Folders on this computer that `ecp_files_upload` and the `sql_file_path` imports may read from without asking, separated by `:` (`;` on Windows). Your MCP client's own working folders (MCP roots, e.g. Claude Code's project folder) are always allowed. |
 | `ECP_TLS_INSECURE` | no | Dev-only escape hatch for a self-signed ECP instance. Never set this for a real account — see the comment in `.env.sample`. |
 
 ## Use it
@@ -116,6 +117,7 @@ Worth understanding before you point this at an account you care about:
 - **Scope**: one server instance = one hosting account, authenticated exactly as that account (same permissions, same rate limits as logging into ECP's web UI yourself). It cannot reach any other account.
 - **Destructive/security-sensitive actions require `confirm: true`** as an explicit tool argument (dropping a table, deleting a file, granting privileges, etc.) — this makes the intent unambiguous in both your MCP client's approval prompt and the audit log below. Don't run this with your client's "auto-approve all tools" setting on.
 - **Local audit log**: every tool call is appended to a local file (`ECP_MCP_AUDIT_LOG_PATH`, defaults to `audit.log` next to the installed package) with secrets redacted — since ECP itself doesn't currently keep a durable record of actions taken this way.
+- **Uploads read files from your computer, so they're limited to folders you chose.** `ecp_files_upload` and the `sql_file_path` option of the import tools stream a local file straight to ECP (it never goes through the chat). They read without asking only inside your MCP client's working folders and `ECP_UPLOAD_DIRS`, checked after resolving symlinks. Any other file needs your yes in an elicitation prompt that names the file, and the upload is refused if your client can't show one. This keeps an AI that was steered by text it read from sending something like `~/.ssh` to your hosting account.
 - **Credentials** live only in the environment variables you provide and in-process memory — never written to disk beyond what you configure.
 - **Shell commands need your approval for each command.** `ecp_shell_exec` runs a command as the account user, with the same reach as ECP's browser terminal. Before anything runs, the server shows you the exact command through an MCP elicitation prompt. Declining runs nothing. The `confirm: true` pattern above isn't enough here, because the AI fills in that argument itself and could be steered by text it reads. If your client can't show elicitation prompts, the tool refuses to run. Commands are non-interactive and are killed after their timeout (max 300s). Every command is recorded in the audit log.
 

@@ -32,7 +32,7 @@ All tools act on the one hosting account the plugin is logged into. Tools marked
 - `ecp_network_port_maps`, `ecp_network_domain_port_maps`.
 
 ## Files
-- `ecp_files_list`, `ecp_files_directory_tree`, `ecp_files_read`, `ecp_files_write` ⚠, `ecp_files_add_file`, `ecp_files_add_folder`, `ecp_files_rename`, `ecp_files_copy(_multiple)`, `ecp_files_move(_multiple)`, `ecp_files_delete(_multiple)` ⚠, `ecp_files_change_permission`, `ecp_files_compress`, `ecp_files_extract`, `ecp_files_upload_limit`.
+- `ecp_files_list`, `ecp_files_directory_tree`, `ecp_files_read`, `ecp_files_write` ⚠, `ecp_files_upload` (a file from the user's computer, any size), `ecp_files_add_file`, `ecp_files_add_folder`, `ecp_files_rename`, `ecp_files_copy(_multiple)`, `ecp_files_move(_multiple)`, `ecp_files_delete(_multiple)` ⚠, `ecp_files_change_permission`, `ecp_files_compress`, `ecp_files_extract`, `ecp_files_upload_limit`.
 - Home folder is `/home/<username>`; apps live in `~/apps/<folder>`.
 
 ## Databases
