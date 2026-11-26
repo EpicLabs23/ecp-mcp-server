@@ -1,4 +1,5 @@
-import { realpath, stat } from "node:fs/promises";
+import { constants } from "node:fs";
+import { open, realpath, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -83,39 +84,58 @@ export async function openLocalUpload(
     throw new Error(`local_path must be an absolute path on this computer, got "${localPath}".`);
   }
 
-  let real: string;
-  try {
-    real = await realpath(given);
-  } catch {
-    throw new Error(`No file at ${given} on this computer.`);
-  }
-  const info = await stat(real);
-  if (!info.isFile()) throw new Error(`${given} isn't a file. To send a folder, compress it into a .zip first, upload that, then ecp_files_extract it.`);
-
-  const limit = await uploadLimitBytes(client);
-  if (limit !== null && info.size > limit) {
-    throw new Error(
-      `${given} is ${formatSize(info.size)}, over this ECP's ${formatSize(limit)} upload limit. The hosting admin can raise the account's upload limit in EHM.`,
-    );
-  }
-
+  // Nothing about a file outside the allowed folders (whether it exists, its
+  // size or type) reaches the model before the user approves it: they all
+  // get the same error. A path that doesn't resolve is judged by its text.
+  const real = await realpath(given).catch(() => null);
   const dirs = await allowedDirs(ctx);
-  if (!dirs.some((dir) => isInside(real, dir))) {
-    const shown = real === given ? real : `${given} (which points to ${real})`;
-    let ok: boolean;
-    try {
-      ok = await ctx.askUser(
-        `Send ${shown} (${formatSize(info.size)}) from this computer ${purpose}? It's outside the folders this server may upload from without asking.`,
-      );
-    } catch {
+  const inside = dirs.some((dir) => isInside(real ?? path.resolve(given), dir));
+  const outsideError = () =>
+    new Error(
+      `${given} is outside the folders this server may upload from (the chat app's working folders and ECP_UPLOAD_DIRS), and it wasn't approved. Move the file into one of those folders, or add its folder to ECP_UPLOAD_DIRS (the plugin's "Upload folder" option).`,
+    );
+  if (!real) throw inside ? new Error(`No file at ${given} on this computer.`) : outsideError();
+
+  // Open once and send from this handle, so the file that was checked is the
+  // file that's sent: swapping in a symlink after the check can't redirect
+  // it. O_NOFOLLOW refuses a final-component symlink at open; the second
+  // realpath + inode comparison catches a swapped parent folder.
+  const handle = await open(real, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0)).catch(() => null);
+  if (!handle) throw inside ? new Error(`Can't open ${given} on this computer.`) : outsideError();
+  try {
+    const info = await handle.stat();
+    const again = await realpath(given).catch(() => null);
+    const againInfo = again ? await stat(again).catch(() => null) : null;
+    if (!againInfo || again !== real || againInfo.ino !== info.ino || againInfo.dev !== info.dev) {
+      throw inside ? new Error(`${given} changed while it was being checked. Try again.`) : outsideError();
+    }
+    if (!info.isFile()) {
+      throw inside
+        ? new Error(`${given} isn't a file. To send a folder, compress it into a .zip first, upload that, then ecp_files_extract it.`)
+        : outsideError();
+    }
+
+    if (!inside) {
+      const shown = real === given ? real : `${given} (which points to ${real})`;
+      const ok = await ctx
+        .askUser(
+          `Send ${shown} (${formatSize(info.size)}) from this computer ${purpose}? It's outside the folders this server may upload from without asking.`,
+        )
+        .catch(() => false);
+      if (!ok) throw outsideError();
+    }
+
+    const limit = await uploadLimitBytes(client);
+    if (limit !== null && info.size > limit) {
       throw new Error(
-        `${shown} is outside the folders this server may upload from (the chat app's working folders and ECP_UPLOAD_DIRS), and this chat app can't show an approval prompt. Move the file into one of those folders, or add its folder to ECP_UPLOAD_DIRS (the plugin's "Upload folder" option).`,
+        `${given} is ${formatSize(info.size)}, over this ECP's ${formatSize(limit)} upload limit. The hosting admin can raise the account's upload limit in EHM.`,
       );
     }
-    if (!ok) throw new Error("The user declined sending this file.");
+    return { path: real, size: info.size, handle };
+  } catch (err) {
+    await handle.close();
+    throw err;
   }
-
-  return { path: real, size: info.size };
 }
 
 /**

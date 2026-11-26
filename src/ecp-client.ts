@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { createReadStream } from "node:fs";
+import type { FileHandle } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { Readable } from "node:stream";
@@ -41,10 +41,14 @@ function extractRefreshCookie(setCookieHeaders: string[]): string | null {
   return null;
 }
 
-/** A file on this computer to send as an upload, already checked (local-files.ts). */
+/**
+ * A file on this computer to send as an upload, already checked and opened
+ * (local-files.ts). requestMultipart sends from the handle and closes it.
+ */
 export interface LocalFile {
   path: string;
   size: number;
+  handle: FileHandle;
 }
 
 // Per the HTML form-data encoding: '"' and line breaks in a name or filename
@@ -212,6 +216,20 @@ export class EcpClient {
     file: { fieldName: string; fileName: string; content: string | LocalFile; contentType?: string },
     query?: Record<string, unknown>,
   ): Promise<T> {
+    try {
+      return await this.sendMultipart<T>(path, fields, file, query);
+    } finally {
+      // The handle is ours once passed in, whether or not the upload worked.
+      if (typeof file.content !== "string") await file.content.handle.close();
+    }
+  }
+
+  private async sendMultipart<T>(
+    path: string,
+    fields: Record<string, unknown>,
+    file: { fieldName: string; fileName: string; content: string | LocalFile; contentType?: string },
+    query?: Record<string, unknown>,
+  ): Promise<T> {
     const token = await this.ensureAccessToken();
     const url = new URL(`${this.baseUrl}/${path.replace(/^\/+/, "")}`);
     if (query) {
@@ -244,7 +262,7 @@ export class EcpClient {
           // A file that changed size since it was checked would make the
           // body disagree with content-length - fail rather than send it.
           let sent = 0;
-          for await (const chunk of createReadStream(local.path)) {
+          for await (const chunk of local.handle.createReadStream({ start: 0, autoClose: false })) {
             sent += (chunk as Buffer).length;
             yield chunk as Buffer;
           }
